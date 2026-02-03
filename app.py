@@ -6,7 +6,7 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 
 # ---------------- PAGE CONFIG ----------------
-st.set_page_config(page_title="Leaf Disease Detection", layout="centered")
+st.set_page_config(page_title="AI-Driven Web Application for Automated Disease Detection in Rice and Pulse Crops", layout="centered")
 
 st.title("🌿 Leaf Disease Detection")
 st.write("Upload a leaf image to identify the crop and disease")
@@ -102,3 +102,4 @@ if uploaded_file is not None:
 
     if confidence < 50:
         st.warning("⚠️ Low confidence prediction. Please upload a clearer leaf image.")
+
