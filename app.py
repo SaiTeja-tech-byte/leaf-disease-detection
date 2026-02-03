@@ -8,7 +8,7 @@ from tensorflow.keras.preprocessing import image
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(page_title="AI-Driven Web Application for Automated Disease Detection in Rice and Pulse Crops", layout="centered")
 
-st.title("🌿 Leaf Disease Detection")
+st.title("🌿 AI-Driven Web Application for Automated Disease Detection in Rice and Pulse Crops")
 st.write("Upload a leaf image to identify the crop and disease")
 
 # ---------------- MODEL CONFIG ----------------
@@ -102,4 +102,5 @@ if uploaded_file is not None:
 
     if confidence < 50:
         st.warning("⚠️ Low confidence prediction. Please upload a clearer leaf image.")
+
 
