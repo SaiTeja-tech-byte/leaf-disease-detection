@@ -23,7 +23,7 @@ st.markdown(
 
     /* Main container */
     .block-container {
-        background-color: #ffffff;
+        background-color: #black;
         padding: 2.5rem;
         border-radius: 16px;
         max-width: 850px;
@@ -177,3 +177,4 @@ st.markdown(
     "<div class='footer'>Built with Deep Learning & Streamlit | Academic Project</div>",
     unsafe_allow_html=True
 )
+
