@@ -131,9 +131,28 @@ if uploaded_file is not None:
     with col2:
         st.error(f"🦠 **Disease Detected**\n\n{disease_name}")
 
-    st.markdown("### 📊 Prediction Confidence")
-    st.progress(int(confidence))
-    st.write(f"**{confidence:.2f}% confidence**")
+   st.markdown("### 📊 Prediction Metrics")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.metric(
+        label="Confidence",
+        value=f"{confidence:.2f}%"
+    )
+
+with col2:
+    st.metric(
+        label="Model Precision",
+        value=f"{MODEL_PRECISION}%"
+    )
+
+with col3:
+    st.metric(
+        label="Model Accuracy",
+        value=f"{MODEL_ACCURACY}%"
+    )
+
 
     st.info(f"✅ Model Accuracy (evaluated on test dataset): **{MODEL_ACCURACY}%**")
 
@@ -151,3 +170,4 @@ st.markdown(
     "</p>",
     unsafe_allow_html=True
 )
+
