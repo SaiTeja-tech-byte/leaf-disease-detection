@@ -132,7 +132,7 @@ def auth_page():
             if login_user(username, password):
                 st.session_state.logged_in = True
                 st.success("Login successful")
-               st.rerun()
+                st.rerun()
 
             else:
                 st.error("Invalid username or password")
@@ -206,4 +206,5 @@ if not st.session_state.logged_in:
     auth_page()
 else:
     main_app()
+
 
