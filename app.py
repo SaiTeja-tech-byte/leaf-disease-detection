@@ -29,44 +29,37 @@ BACKGROUND_IMAGE_URL = (
 st.markdown(
     f"""
     <style>
-    .stApp {{
-        background: url("{BACKGROUND_IMAGE_URL}") no-repeat center center fixed;
-        background-size: cover;
-    }}
+    /* -------- DARK GLASS MAIN CARD -------- */
+.block-container {
+    background: rgba(15, 15, 15, 0.88);   /* deep black glass */
+    padding: 2.5rem;
+    border-radius: 16px;
+    max-width: 900px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+    backdrop-filter: blur(10px);
+}
 
-    .block-container {{
-        background: rgba(255,255,255,0.9);
-        padding: 2.5rem;
-        border-radius: 16px;
-        max-width: 900px;
-        box-shadow: 0 12px 35px rgba(0,0,0,0.25);
-    }}
+/* -------- TEXT COLORS FOR DARK THEME -------- */
+h1, h2, h3 {
+    color: #e5fbe5;
+}
 
-    h1 {{
-        color: #1b5e20;
-        text-align: center;
-        font-weight: 800;
-    }}
+p, label, span, div {
+    color: #e5e7eb;
+}
 
-    .subtitle {{
-        text-align: center;
-        color: #374151;
-        font-size: 16px;
-        margin-bottom: 25px;
-    }}
+/* -------- METRIC VALUES -------- */
+[data-testid="stMetricValue"] {
+    color: #a7f3d0;
+}
 
-    div[data-testid="stFileUploader"] {{
-        background: rgba(245,247,250,0.95);
-        padding: 1rem;
-        border-radius: 12px;
-    }}
+/* -------- FILE UPLOADER -------- */
+div[data-testid="stFileUploader"] {
+    background: rgba(30, 30, 30, 0.95);
+    padding: 1rem;
+    border-radius: 12px;
+}
 
-    .footer {{
-        text-align: center;
-        color: #4b5563;
-        font-size: 13px;
-        margin-top: 40px;
-    }}
     </style>
     """,
     unsafe_allow_html=True
@@ -206,5 +199,6 @@ if not st.session_state.logged_in:
     auth_page()
 else:
     main_app()
+
 
 
