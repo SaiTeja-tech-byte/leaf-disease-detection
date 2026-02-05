@@ -132,7 +132,8 @@ def auth_page():
             if login_user(username, password):
                 st.session_state.logged_in = True
                 st.success("Login successful")
-                st.experimental_rerun()
+               st.rerun()
+
             else:
                 st.error("Invalid username or password")
 
@@ -150,7 +151,8 @@ def main_app():
     st.sidebar.success("Logged in")
     if st.sidebar.button("Logout"):
         st.session_state.logged_in = False
-        st.experimental_rerun()
+        st.rerun()
+
 
     st.markdown("<h1>🌿 AI-Driven Crop Disease Detection</h1>", unsafe_allow_html=True)
     st.markdown(
@@ -204,3 +206,4 @@ if not st.session_state.logged_in:
     auth_page()
 else:
     main_app()
+
