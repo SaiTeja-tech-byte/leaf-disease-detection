@@ -16,7 +16,7 @@ st.set_page_config(
 # ================= INIT DATABASE =================
 create_user_table()
 
-# ================= SESSION STATE =================
+# ================= SESSION =================
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
@@ -26,48 +26,61 @@ BACKGROUND_IMAGE_URL = (
     "SaiTeja-tech-byte/leaf-disease-detection/main/assets/background.jpg"
 )
 
+# ================= STYLES =================
 st.markdown(
     f"""
     <style>
-    /* -------- DARK GLASS MAIN CARD -------- */
-.block-container {
-    background: rgba(15, 15, 15, 0.88);   /* deep black glass */
-    padding: 2.5rem;
-    border-radius: 16px;
-    max-width: 900px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
-    backdrop-filter: blur(10px);
-}
+    .stApp {{
+        background: url("{BACKGROUND_IMAGE_URL}") no-repeat center center fixed;
+        background-size: cover;
+    }}
 
-/* -------- TEXT COLORS FOR DARK THEME -------- */
-h1, h2, h3 {
-    color: #e5fbe5;
-}
+    /* Dark glass card */
+    .block-container {{
+        background: rgba(15, 15, 15, 0.88);
+        padding: 2.5rem;
+        border-radius: 16px;
+        max-width: 900px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+        backdrop-filter: blur(10px);
+    }}
 
-p, label, span, div {
-    color: #e5e7eb;
-}
+    /* Text colors */
+    h1, h2, h3 {{
+        color: #e5fbe5;
+        text-align: center;
+    }}
 
-/* -------- METRIC VALUES -------- */
-[data-testid="stMetricValue"] {
-    color: #a7f3d0;
-}
+    p, label, span, div {{
+        color: #e5e7eb;
+    }}
 
-/* -------- FILE UPLOADER -------- */
-div[data-testid="stFileUploader"] {
-    background: rgba(30, 30, 30, 0.95);
-    padding: 1rem;
-    border-radius: 12px;
-}
+    /* File uploader */
+    div[data-testid="stFileUploader"] {{
+        background: rgba(30,30,30,0.95);
+        padding: 1rem;
+        border-radius: 12px;
+    }}
 
+    /* Metric values */
+    [data-testid="stMetricValue"] {{
+        color: #a7f3d0;
+    }}
+
+    .footer {{
+        text-align: center;
+        color: #9ca3af;
+        font-size: 13px;
+        margin-top: 40px;
+    }}
     </style>
     """,
     unsafe_allow_html=True
 )
 
 # ================= MODEL METRICS =================
-MODEL_ACCURACY = 97.9     # from test dataset
-MODEL_PRECISION = 91.2    # from evaluation report
+MODEL_ACCURACY = 97.9
+MODEL_PRECISION = 91.2
 
 # ================= MODEL CONFIG =================
 MODEL_URL = (
@@ -111,10 +124,10 @@ disease_info = {
     "tomato": ("Tomato Leaf", "Late Blight / Leaf Mold")
 }
 
-# ================= AUTH PAGES =================
+# ================= AUTH PAGE =================
 def auth_page():
     st.markdown("<h1>🌿 Welcome</h1>", unsafe_allow_html=True)
-    st.markdown("<div class='subtitle'>Login or create an account</div>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center;'>Login or create an account</p>", unsafe_allow_html=True)
 
     tab1, tab2 = st.tabs(["🔐 Login", "📝 Sign Up"])
 
@@ -126,35 +139,28 @@ def auth_page():
                 st.session_state.logged_in = True
                 st.success("Login successful")
                 st.rerun()
-
             else:
-                st.error("Invalid username or password")
+                st.error("Invalid credentials")
 
     with tab2:
         new_user = st.text_input("Create Username")
         new_pass = st.text_input("Create Password", type="password")
         if st.button("Sign Up"):
             if signup_user(new_user, new_pass):
-                st.success("Account created! Please login.")
+                st.success("Account created. Please login.")
             else:
                 st.error("Username already exists")
 
 # ================= MAIN APP =================
 def main_app():
-    st.sidebar.success("Logged in")
     if st.sidebar.button("Logout"):
         st.session_state.logged_in = False
         st.rerun()
 
-
     st.markdown("<h1>🌿 AI-Driven Crop Disease Detection</h1>", unsafe_allow_html=True)
-    st.markdown(
-        "<div class='subtitle'>Identify crop type and disease from a leaf image</div>",
-        unsafe_allow_html=True
-    )
+    st.markdown("<p style='text-align:center;'>Upload a leaf image to identify disease</p>", unsafe_allow_html=True)
 
-    st.markdown("### 📤 Upload Leaf Image")
-    uploaded_file = st.file_uploader("", type=["jpg", "png", "jpeg"])
+    uploaded_file = st.file_uploader("Upload leaf image", type=["jpg", "png", "jpeg"])
 
     if uploaded_file:
         st.image(uploaded_file, caption="Uploaded Leaf Image", use_column_width=True)
@@ -163,42 +169,30 @@ def main_app():
         img = image.load_img(uploaded_file, target_size=(h, w))
         img_array = np.expand_dims(image.img_to_array(img) / 255.0, axis=0)
 
-        with st.spinner("Analyzing leaf image..."):
+        with st.spinner("Analyzing image..."):
             prediction = model.predict(img_array)
 
         predicted_class = class_labels[np.argmax(prediction)]
         confidence = np.max(prediction) * 100
-        leaf, disease = disease_info.get(predicted_class, ("Unknown", "Unknown"))
+        leaf, disease = disease_info[predicted_class]
 
         st.markdown("---")
-        st.markdown("### 🧾 Prediction Result")
-
         c1, c2 = st.columns(2)
         with c1:
-            st.success(f"🌱 Leaf Identified\n\n**{leaf}**")
+            st.success(f"🌱 Leaf: **{leaf}**")
         with c2:
-            st.error(f"🦠 Disease Detected\n\n**{disease}**")
+            st.error(f"🦠 Disease: **{disease}**")
 
-        st.markdown("### 📊 Model Metrics")
+        st.markdown("### 📊 Metrics")
         m1, m2, m3 = st.columns(3)
-
         m1.metric("Confidence", f"{confidence:.2f}%")
         m2.metric("Precision", f"{MODEL_PRECISION}%")
         m3.metric("Accuracy", f"{MODEL_ACCURACY}%")
 
-        if confidence < 50:
-            st.warning("Low confidence prediction. Please upload a clearer leaf image.")
-
-    st.markdown(
-        "<div class='footer'>AI + Deep Learning | Academic Project</div>",
-        unsafe_allow_html=True
-    )
+    st.markdown("<div class='footer'>AI + Deep Learning | Academic Project</div>", unsafe_allow_html=True)
 
 # ================= ROUTING =================
-if not st.session_state.logged_in:
-    auth_page()
-else:
+if st.session_state.logged_in:
     main_app()
-
-
-
+else:
+    auth_page()
