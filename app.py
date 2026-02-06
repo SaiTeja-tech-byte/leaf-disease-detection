@@ -5,77 +5,71 @@ import requests
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 
-# ================= PAGE CONFIG =================
+# =========================================================
+# PAGE CONFIG
+# =========================================================
 st.set_page_config(
     page_title="AI-Based Crop Leaf Classification",
     page_icon="🌿",
     layout="centered"
 )
 
-# ================= BACKGROUND IMAGE =================
-BACKGROUND_IMAGE_URL = (
-    "https://raw.githubusercontent.com/"
-    "SaiTeja-tech-byte/leaf-disease-detection/main/assets/background.jpg"
-)
-
-# ================= STYLES =================
+# =========================================================
+# CUSTOM STYLES (DARK, CLEAN, READABLE)
+# =========================================================
 st.markdown(
-    f"""
+    """
     <style>
-    .stApp {{
-        background: url("{BACKGROUND_IMAGE_URL}") no-repeat center center fixed;
-        background-size: cover;
-    }}
+    .stApp {
+        background: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);
+    }
 
-    .block-container {{
-        background: rgba(15,15,15,0.88);
+    .block-container {
+        background: rgba(0, 0, 0, 0.75);
         padding: 2.5rem;
-        border-radius: 16px;
-        max-width: 900px;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.6);
-        backdrop-filter: blur(10px);
-    }}
+        border-radius: 18px;
+        max-width: 850px;
+        box-shadow: 0px 20px 40px rgba(0,0,0,0.6);
+    }
 
-    h1, h2, h3 {{
-        color: #e5fbe5;
+    h1, h2, h3 {
+        color: #e6fffa;
         text-align: center;
-    }}
+    }
 
-    p, label, span, div {{
+    p, span, label, div {
         color: #e5e7eb;
-    }}
+    }
 
-    div[data-testid="stFileUploader"] {{
-        background: rgba(30,30,30,0.95);
+    div[data-testid="stFileUploader"] {
+        background: rgba(20,20,20,0.9);
         padding: 1rem;
         border-radius: 12px;
-    }}
+    }
 
-    [data-testid="stMetricValue"] {{
-        color: #a7f3d0;
-    }}
+    .warning-box {
+        background: rgba(255, 193, 7, 0.15);
+        padding: 1rem;
+        border-radius: 10px;
+        border-left: 6px solid #ffc107;
+        margin-top: 1rem;
+    }
 
-    .footer {{
+    .footer {
         text-align: center;
         color: #9ca3af;
         font-size: 13px;
-        margin-top: 40px;
-    }}
+        margin-top: 35px;
+    }
     </style>
     """,
     unsafe_allow_html=True
 )
 
-# ================= MODEL METRICS =================
-# (These are crop classification metrics, NOT disease accuracy)
-MODEL_ACCURACY = 97.9
-MODEL_PRECISION = 92.1
-
-# ================= MODEL CONFIG =================
-MODEL_URL = (
-    "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/"
-    "releases/download/v1.0.0/leaf_disease_model_final.keras"
-)
+# =========================================================
+# MODEL CONFIG
+# =========================================================
+MODEL_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v1.0.0/leaf_disease_model_final.keras"
 MODEL_PATH = "leaf_disease_model_final.keras"
 
 @st.cache_resource
@@ -90,7 +84,9 @@ def load_trained_model():
 
 model = load_trained_model()
 
-# ================= CLASS LABELS (CROP ONLY) =================
+# =========================================================
+# CLASS LABELS (CROP ONLY — HONEST)
+# =========================================================
 class_labels = [
     "Cassava",
     "Rice",
@@ -107,35 +103,42 @@ class_labels = [
     "Tomato"
 ]
 
-# ================= HEADER =================
-st.markdown("<h1>🌿 AI-Based Crop Leaf Classification</h1>", unsafe_allow_html=True)
+# =========================================================
+# HEADER
+# =========================================================
+st.markdown("<h1>🌿 Crop Leaf Classification System</h1>", unsafe_allow_html=True)
 st.markdown(
     "<p style='text-align:center;'>Upload a leaf image to identify the crop type</p>",
     unsafe_allow_html=True
 )
 
-# ================= IMAGE UPLOAD =================
+# =========================================================
+# FILE UPLOAD
+# =========================================================
 uploaded_file = st.file_uploader(
-    "Upload a leaf image",
+    "Upload a leaf image (jpg / png / jpeg)",
     type=["jpg", "png", "jpeg"]
 )
 
-if uploaded_file:
+if uploaded_file is not None:
     st.image(uploaded_file, caption="Uploaded Leaf Image", use_column_width=True)
 
-    # Match model input size
-    h, w = model.input_shape[1], model.input_shape[2]
-    img = image.load_img(uploaded_file, target_size=(h, w))
-    img_array = np.expand_dims(image.img_to_array(img) / 255.0, axis=0)
+    # Match model input size dynamically
+    input_h, input_w = model.input_shape[1], model.input_shape[2]
+    img = image.load_img(uploaded_file, target_size=(input_h, input_w))
+    img_array = image.img_to_array(img) / 255.0
+    img_array = np.expand_dims(img_array, axis=0)
 
     with st.spinner("Analyzing image..."):
         prediction = model.predict(img_array)
 
     predicted_index = np.argmax(prediction)
     predicted_crop = class_labels[predicted_index]
-    confidence = np.max(prediction) * 100
+    confidence = float(np.max(prediction) * 100)
 
-    # ================= OUTPUT =================
+    # =====================================================
+    # RESULTS
+    # =====================================================
     st.markdown("---")
     st.markdown("## 🧾 Prediction Result")
 
@@ -143,20 +146,34 @@ if uploaded_file:
 
     st.markdown("### 📊 Prediction Confidence")
     st.progress(int(confidence))
-    st.write(f"{confidence:.2f}%")
+    st.write(f"**{confidence:.2f}%**")
 
-    st.markdown("### 📈 Model Performance (Crop Classification)")
-    c1, c2 = st.columns(2)
-    c1.metric("Accuracy", f"{MODEL_ACCURACY}%")
-    c2.metric("Precision", f"{MODEL_PRECISION}%")
+    # =====================================================
+    # IMPORTANT WARNING (THIS FIXES YOUR ISSUE)
+    # =====================================================
+    st.markdown(
+        """
+        <div class="warning-box">
+        ⚠️ <b>Important Note:</b><br>
+        This system performs <b>crop leaf classification only</b>.<br>
+        It does <b>NOT</b> identify plant diseases.<br><br>
+        Disease-infected leaves may affect prediction accuracy.
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-    # ================= TOP-3 PREDICTIONS =================
+    # =====================================================
+    # TOP-3 PREDICTIONS (TRUST & TRANSPARENCY)
+    # =====================================================
     st.markdown("### 🔍 Top-3 Predictions")
     top3 = np.argsort(prediction[0])[-3:][::-1]
-    for i in top3:
-        st.write(f"- {class_labels[i]} : {prediction[0][i]*100:.2f}%")
+    for idx in top3:
+        st.write(f"- {class_labels[idx]} : {prediction[0][idx]*100:.2f}%")
 
-# ================= FOOTER =================
+# =========================================================
+# FOOTER
+# =========================================================
 st.markdown(
     "<div class='footer'>AI + Deep Learning | Crop Leaf Classification Project</div>",
     unsafe_allow_html=True
