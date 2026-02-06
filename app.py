@@ -186,8 +186,8 @@ def main_app():
         st.markdown("### 📊 Metrics")
         m1, m2, m3 = st.columns(3)
         m1.metric("Confidence", f"{confidence:.2f}%")
-        m2.metric("Precision", f"{MODEL_PRECISION}%")
-        m3.metric("Accuracy", f"{MODEL_ACCURACY}%")
+        m2.metric("Accuracy", f"{MODEL_PRECISION}%")
+        m3.metric("Precision", f"{MODEL_ACCURACY}%")
 
     st.markdown("<div class='footer'>AI + Deep Learning | Academic Project</div>", unsafe_allow_html=True)
 
@@ -196,3 +196,4 @@ if st.session_state.logged_in:
     main_app()
 else:
     auth_page()
+
