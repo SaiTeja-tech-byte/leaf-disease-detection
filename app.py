@@ -25,7 +25,7 @@ st.write("Upload a leaf image to identify the crop, disease, confidence, remedie
 # =====================================================
 # MODEL CONFIG (GITHUB RELEASE)
 # =====================================================
-MODEL_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v2.0.0/plant_disease_model.keras"
+MODEL_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v2.0.0/trained_model.1.keras"
 MODEL_PATH = "plant_disease_model.keras"
 
 @st.cache_resource
@@ -193,3 +193,4 @@ st.markdown(
     "<hr><center>AI-Driven Crop Disease Detection | Deep Learning Project</center>",
     unsafe_allow_html=True
 )
+
