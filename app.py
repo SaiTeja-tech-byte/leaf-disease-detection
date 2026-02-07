@@ -18,12 +18,18 @@ st.title("🌿 Leaf Disease Detection")
 st.write("Upload a leaf image to predict the disease")
 
 # --------------------------------------------------
-# Model & Metrics URLs
+# GitHub Release URLs
 # --------------------------------------------------
-MODEL_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v1.0.0/leaf_disease_mobilenet_model.keras"
-MODEL_PATH = "leaf_disease_model.keras"
+MODEL_URL = (
+    "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/"
+    "releases/download/v1.0.0/leaf_disease_mobilenet_model.keras"
+)
+MODEL_PATH = "leaf_disease_mobilenet_model.keras"
 
-METRICS_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v1.0.0/model_metrics.json"
+METRICS_URL = (
+    "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/"
+    "releases/download/v1.0.0/model_metrics.json"
+)
 METRICS_PATH = "model_metrics.json"
 
 # --------------------------------------------------
@@ -92,12 +98,13 @@ uploaded_file = st.file_uploader(
 if uploaded_file is not None:
     st.image(uploaded_file, caption="Uploaded Image", width="stretch")
 
-    img = image.load_img(uploaded_file, target_size=(128, 128))
+    # 🔴 IMPORTANT: Must match model input size (224x224)
+    img = image.load_img(uploaded_file, target_size=(224, 224))
     img_array = image.img_to_array(img) / 255.0
     img_array = np.expand_dims(img_array, axis=0)
 
     prediction = model.predict(img_array)
-    predicted_index = np.argmax(prediction)
+    predicted_index = int(np.argmax(prediction))
     predicted_class = class_labels[predicted_index]
     confidence = float(np.max(prediction))
 
@@ -126,5 +133,5 @@ if uploaded_file is not None:
 st.markdown("---")
 st.caption(
     "📌 Accuracy & Precision are evaluated on a held-out test set of 5,741 images. "
-    "Confidence is image-specific."
+    "Confidence is computed per uploaded image."
 )
