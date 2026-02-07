@@ -1,5 +1,7 @@
 import streamlit as st
 import numpy as np
+import os
+import requests
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 
@@ -8,9 +10,18 @@ st.set_page_config(page_title="Leaf Disease Detection", layout="centered")
 st.title("🌿 Leaf Disease Detection")
 st.write("Upload a leaf image to predict the disease")
 
+MODEL_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v1.0.0/leaf_disease_mobilenet_model.keras"
+MODEL_PATH = "leaf_disease_model_final.keras"
+
 @st.cache_resource
 def load_trained_model():
-   return load_model("leaf_disease_model_final.keras")
+    if not os.path.exists(MODEL_PATH):
+        with st.spinner("Downloading model..."):
+            r = requests.get(MODEL_URL)
+            r.raise_for_status()
+            with open(MODEL_PATH, "wb") as f:
+                f.write(r.content)
+    return load_model(MODEL_PATH)
 
 model = load_trained_model()
 
@@ -30,9 +41,7 @@ class_labels = [
     "tomato"
 ]
 
-uploaded_file = st.file_uploader(
-    "Choose a leaf image", type=["jpg", "png", "jpeg"]
-)
+uploaded_file = st.file_uploader("Choose a leaf image", type=["jpg", "png", "jpeg"])
 
 if uploaded_file is not None:
     st.image(uploaded_file, caption="Uploaded Image", use_column_width=True)
@@ -47,5 +56,3 @@ if uploaded_file is not None:
 
     st.success(f"🦠 Predicted Disease: **{predicted_class}**")
     st.info(f"Confidence: **{confidence:.2f}%**")
-
-
