@@ -10,7 +10,7 @@ st.write("Upload a leaf image to predict the disease")
 
 @st.cache_resource
 def load_trained_model():
-   return load_model("leaf_disease_mobilenet_model.keras")
+   return load_model("leaf_disease_model_final (1).keras")
 
 model = load_trained_model()
 
@@ -47,3 +47,4 @@ if uploaded_file is not None:
 
     st.success(f"🦠 Predicted Disease: **{predicted_class}**")
     st.info(f"Confidence: **{confidence:.2f}%**")
+
