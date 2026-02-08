@@ -20,27 +20,15 @@ IMG_SIZE = (224, 224)
 # --------------------------------------------------
 
 # v2 model (Rice, Potato, Tomato, Pepper)
-MODEL_V2_URL = (
-    "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/"
-    "releases/download/v2.0.0/leaf_disease_multicrop_model.keras"
-)
-METRICS_V2_URL = (
-    "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/"
-    "releases/download/v2.0.0/model_metrics.3.json"
-)
+MODEL_V2_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v2.0.0/leaf_disease_multicrop_model.keras"
+METRICS_V2_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v2.0.0/model_metrics.3.json"
 
 # v3 model (All remaining crops)
-MODEL_V3_URL = (
-    "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/"
-    "releases/download/v3.0.0/leaf_disease_v3_checkpoint.keras"
-)
-METRICS_V3_URL = (
-    "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/"
-    "releases/download/v3.0.0/model_metrics_v3.json"
-)
+MODEL_V3_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v3.0.0/leaf_disease_v3_checkpoint.keras"
+METRICS_V3_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v3.0.0/model_metrics_v3.json"
 
 # --------------------------------------------------
-# LOCAL FILE PATHS
+# LOCAL PATHS
 # --------------------------------------------------
 MODEL_V2_PATH = "model_v2.keras"
 MODEL_V3_PATH = "model_v3.keras"
@@ -61,24 +49,20 @@ def download_file(url, path):
 def load_models():
     download_file(MODEL_V2_URL, MODEL_V2_PATH)
     download_file(MODEL_V3_URL, MODEL_V3_PATH)
-    model_v2 = load_model(MODEL_V2_PATH)
-    model_v3 = load_model(MODEL_V3_PATH)
-    return model_v2, model_v3
+    return load_model(MODEL_V2_PATH), load_model(MODEL_V3_PATH)
 
 @st.cache_data
 def load_metrics():
     download_file(METRICS_V2_URL, METRICS_V2_PATH)
     download_file(METRICS_V3_URL, METRICS_V3_PATH)
-
     with open(METRICS_V2_PATH) as f:
         m2 = json.load(f)
     with open(METRICS_V3_PATH) as f:
         m3 = json.load(f)
-
     return m2, m3
 
 # --------------------------------------------------
-# CLASS LABELS (MUST MATCH TRAINING ORDER)
+# CLASS LABELS
 # --------------------------------------------------
 
 V2_CLASSES = [
@@ -130,7 +114,7 @@ V3_CLASSES = sorted([
 V2_CROPS = {"Pepper", "Potato", "Rice", "Tomato"}
 
 # --------------------------------------------------
-# LOAD EVERYTHING
+# LOAD MODELS & METRICS
 # --------------------------------------------------
 model_v2, model_v3 = load_models()
 metrics_v2, metrics_v3 = load_metrics()
@@ -138,10 +122,7 @@ metrics_v2, metrics_v3 = load_metrics()
 # --------------------------------------------------
 # FILE UPLOADER
 # --------------------------------------------------
-uploaded_file = st.file_uploader(
-    "📤 Upload a leaf image",
-    type=["jpg", "jpeg", "png"]
-)
+uploaded_file = st.file_uploader("📤 Upload a leaf image", type=["jpg", "jpeg", "png"])
 
 if uploaded_file:
     st.image(uploaded_file, caption="Uploaded Image", width=300)
@@ -150,14 +131,14 @@ if uploaded_file:
     img_array = image.img_to_array(img) / 255.0
     img_array = np.expand_dims(img_array, axis=0)
 
-    # ---------- First pass with v2 ----------
+    # -------- v2 prediction --------
     preds_v2 = model_v2.predict(img_array)
     idx_v2 = int(np.argmax(preds_v2))
     label_v2 = V2_CLASSES[idx_v2]
-    crop_v2 = label_v2.split("__")[0]
+    crop_guess = label_v2.split("__")[0]
 
-    # ---------- Decide model ----------
-    if crop_v2 in V2_CROPS:
+    # -------- Decide model --------
+    if crop_guess in V2_CROPS:
         final_label = label_v2
         confidence = float(np.max(preds_v2)) * 100
         metrics = metrics_v2
@@ -170,7 +151,13 @@ if uploaded_file:
         metrics = metrics_v3
         model_used = "v3"
 
-    crop, disease = final_label.split("___")
+    # -------- SAFE crop/disease split (FIXED BUG) --------
+    parts = final_label.split("___")
+    crop = parts[0]
+    disease = parts[1] if len(parts) > 1 else "Healthy / No disease detected"
+
+    crop = crop.replace("_", " ").title()
+    disease = disease.replace("_", " ").title()
 
     # --------------------------------------------------
     # DISPLAY RESULTS
