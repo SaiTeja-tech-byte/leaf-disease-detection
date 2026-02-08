@@ -1,137 +1,86 @@
 import streamlit as st
 import numpy as np
-import os
 import json
+import os
 import requests
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 
-# --------------------------------------------------
-# Page Config
-# --------------------------------------------------
+# ---------------- PAGE CONFIG ----------------
 st.set_page_config(
     page_title="Leaf Disease Detection",
     layout="centered"
 )
 
 st.title("🌿 Leaf Disease Detection")
-st.write("Upload a leaf image to predict the disease")
+st.write("Upload a leaf image to predict the **crop** and **disease**")
 
-# --------------------------------------------------
-# GitHub Release URLs
-# --------------------------------------------------
-MODEL_URL = (
-    "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/"
-    "releases/download/v1.0.0/leaf_disease_mobilenet_model.keras"
-)
-MODEL_PATH = "leaf_disease_mobilenet_model.keras"
+# ---------------- GITHUB RELEASE URLS ----------------
+MODEL_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v2.0.0/leaf_disease_multicrop_model.keras"
+MODEL_PATH = "leaf_disease_multicrop_model.keras"
 
-METRICS_URL = (
-    "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/"
-    "releases/download/v1.0.0/model_metrics.json"
-)
+METRICS_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v2.0.0/model_metrics.3.json"
 METRICS_PATH = "model_metrics.json"
 
-# --------------------------------------------------
-# Load Model
-# --------------------------------------------------
+# ---------------- LOAD MODEL ----------------
 @st.cache_resource
 def load_trained_model():
     if not os.path.exists(MODEL_PATH):
-        with st.spinner("📥 Downloading model..."):
+        with st.spinner("⬇️ Downloading model..."):
             r = requests.get(MODEL_URL)
             r.raise_for_status()
             with open(MODEL_PATH, "wb") as f:
                 f.write(r.content)
     return load_model(MODEL_PATH)
 
-# --------------------------------------------------
-# Load Metrics
-# --------------------------------------------------
-@st.cache_resource
+# ---------------- LOAD METRICS ----------------
+@st.cache_data
 def load_metrics():
     if not os.path.exists(METRICS_PATH):
-        with st.spinner("📥 Loading model metrics..."):
-            r = requests.get(METRICS_URL)
-            r.raise_for_status()
-            with open(METRICS_PATH, "wb") as f:
-                f.write(r.content)
+        r = requests.get(METRICS_URL)
+        r.raise_for_status()
+        with open(METRICS_PATH, "wb") as f:
+            f.write(r.content)
     with open(METRICS_PATH, "r") as f:
         return json.load(f)
 
 model = load_trained_model()
 metrics = load_metrics()
 
-MODEL_ACCURACY = metrics["accuracy"]
-MODEL_PRECISION = metrics["precision"]
-
-# --------------------------------------------------
-# Class Labels (13 classes)
-# --------------------------------------------------
-class_labels = [
-    "Cassava",
-    "Rice",
-    "Apple",
-    "Cherry (including sour)",
-    "Corn (Maize)",
-    "Grape",
-    "Orange",
-    "Peach",
-    "Bell Pepper",
-    "Potato",
-    "Squash",
-    "Strawberry",
-    "Tomato"
-]
-
-# --------------------------------------------------
-# File Upload
-# --------------------------------------------------
+# ---------------- IMAGE UPLOAD ----------------
 uploaded_file = st.file_uploader(
-    "📤 Choose a leaf image",
+    "📤 Upload a leaf image",
     type=["jpg", "jpeg", "png"]
 )
 
-# --------------------------------------------------
-# Prediction
-# --------------------------------------------------
 if uploaded_file is not None:
-    st.image(uploaded_file, caption="Uploaded Image", width="stretch")
+    st.image(uploaded_file, caption="Uploaded Image", width=300)
 
-    # 🔴 IMPORTANT: Must match model input size (224x224)
+    # Preprocess image
     img = image.load_img(uploaded_file, target_size=(224, 224))
     img_array = image.img_to_array(img) / 255.0
     img_array = np.expand_dims(img_array, axis=0)
 
+    # Prediction
     prediction = model.predict(img_array)
-    predicted_index = int(np.argmax(prediction))
-    predicted_class = class_labels[predicted_index]
-    confidence = float(np.max(prediction))
+    idx = np.argmax(prediction)
+    confidence = np.max(prediction) * 100
 
-    st.success(f"🦠 **Predicted Disease:** {predicted_class}")
+    # Decode class label
+    class_label = model.class_names[idx]
+    crop, disease = class_label.split("__")
 
-    # --------------------------------------------------
-    # Metrics Display
-    # --------------------------------------------------
-    st.subheader("📊 Model Performance")
+    # ---------------- OUTPUT ----------------
+    st.success("🧠 Prediction Result")
 
-    st.write("**Confidence (Image-level)**")
-    st.progress(confidence)
-    st.write(f"{confidence * 100:.2f}%")
+    st.write(f"🌱 **Crop:** {crop}")
+    st.write(f"🦠 **Disease:** {disease.replace('_', ' ')}")
+    st.write(f"📊 **Confidence:** {confidence:.2f}%")
 
-    st.write("**Accuracy (Test Dataset)**")
-    st.progress(MODEL_ACCURACY)
-    st.write(f"{MODEL_ACCURACY * 100:.2f}%")
+    st.progress(confidence / 100)
 
-    st.write("**Precision (Test Dataset)**")
-    st.progress(MODEL_PRECISION)
-    st.write(f"{MODEL_PRECISION * 100:.2f}%")
+    st.divider()
 
-# --------------------------------------------------
-# Footer
-# --------------------------------------------------
-st.markdown("---")
-st.caption(
-    "📌 Accuracy & Precision are evaluated on a held-out test set of 5,741 images. "
-    "Confidence is computed per uploaded image."
-)
+    st.info("📈 Model Performance (Test Set)")
+    st.write(f"✅ **Accuracy:** {metrics['accuracy'] * 100:.2f}%")
+    st.write(f"🎯 **Precision:** {metrics['precision'] * 100:.2f}%")
