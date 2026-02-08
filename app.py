@@ -11,19 +11,18 @@ from tensorflow.keras.preprocessing import image
 # --------------------------------------------------
 st.set_page_config(page_title="Leaf Disease Detection", layout="centered")
 st.title("🌿 Leaf Disease Detection")
-st.write("Upload a leaf image to predict the **crop and disease**")
+st.write("Upload a leaf image to predict the crop and disease")
 
 IMG_SIZE = (224, 224)
+CONFIDENCE_THRESHOLD = 60.0  # important safety threshold
 
 # --------------------------------------------------
-# GITHUB RELEASE URLS (CONFIRMED)
+# GITHUB RELEASE URLS
 # --------------------------------------------------
 
-# v2 model (Rice, Potato, Tomato, Pepper)
 MODEL_V2_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v2.0.0/leaf_disease_multicrop_model.keras"
 METRICS_V2_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v2.0.0/model_metrics.3.json"
 
-# v3 model (All remaining crops)
 MODEL_V3_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v3.0.0/leaf_disease_v3_checkpoint.keras"
 METRICS_V3_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v3.0.0/model_metrics_v3.json"
 
@@ -36,7 +35,7 @@ METRICS_V2_PATH = "metrics_v2.json"
 METRICS_V3_PATH = "metrics_v3.json"
 
 # --------------------------------------------------
-# HELPER FUNCTIONS
+# DOWNLOAD HELPERS
 # --------------------------------------------------
 def download_file(url, path):
     if not os.path.exists(path):
@@ -111,18 +110,19 @@ V3_CLASSES = sorted([
     "Strawberry___Leaf_scorch"
 ])
 
-V2_CROPS = {"Pepper", "Potato", "Rice", "Tomato"}
-
 # --------------------------------------------------
-# LOAD MODELS & METRICS
+# LOAD MODELS
 # --------------------------------------------------
 model_v2, model_v3 = load_models()
 metrics_v2, metrics_v3 = load_metrics()
 
 # --------------------------------------------------
-# FILE UPLOADER
+# FILE UPLOAD
 # --------------------------------------------------
-uploaded_file = st.file_uploader("📤 Upload a leaf image", type=["jpg", "jpeg", "png"])
+uploaded_file = st.file_uploader(
+    "📤 Upload a leaf image",
+    type=["jpg", "jpeg", "png"]
+)
 
 if uploaded_file:
     st.image(uploaded_file, caption="Uploaded Image", width=300)
@@ -131,45 +131,56 @@ if uploaded_file:
     img_array = image.img_to_array(img) / 255.0
     img_array = np.expand_dims(img_array, axis=0)
 
-    # -------- v2 prediction --------
+    # -------- Predict with BOTH models --------
     preds_v2 = model_v2.predict(img_array)
-    idx_v2 = int(np.argmax(preds_v2))
-    label_v2 = V2_CLASSES[idx_v2]
-    crop_guess = label_v2.split("__")[0]
+    preds_v3 = model_v3.predict(img_array)
 
-    # -------- Decide model --------
-    if crop_guess in V2_CROPS:
+    idx_v2 = int(np.argmax(preds_v2))
+    idx_v3 = int(np.argmax(preds_v3))
+
+    conf_v2 = float(np.max(preds_v2)) * 100
+    conf_v3 = float(np.max(preds_v3)) * 100
+
+    label_v2 = V2_CLASSES[idx_v2]
+    label_v3 = V3_CLASSES[idx_v3]
+
+    # -------- Choose best model --------
+    if conf_v2 >= conf_v3:
         final_label = label_v2
-        confidence = float(np.max(preds_v2)) * 100
+        confidence = conf_v2
         metrics = metrics_v2
         model_used = "v2"
     else:
-        preds_v3 = model_v3.predict(img_array)
-        idx_v3 = int(np.argmax(preds_v3))
-        final_label = V3_CLASSES[idx_v3]
-        confidence = float(np.max(preds_v3)) * 100
+        final_label = label_v3
+        confidence = conf_v3
         metrics = metrics_v3
         model_used = "v3"
 
-    # -------- SAFE crop/disease split (FIXED BUG) --------
-    parts = final_label.split("___")
-    crop = parts[0]
-    disease = parts[1] if len(parts) > 1 else "Healthy / No disease detected"
+    # -------- Confidence threshold --------
+    if confidence < CONFIDENCE_THRESHOLD:
+        st.warning("⚠️ Unsupported or unknown crop detected")
+        st.info("This crop is not supported by the trained models.")
+        st.write(f"📊 Confidence: {confidence:.2f}%")
+        st.stop()
 
-    crop = crop.replace("_", " ").title()
-    disease = disease.replace("_", " ").title()
+    # -------- Safe split --------
+    parts = final_label.split("___")
+    crop = parts[0].replace("_", " ").title()
+    disease = parts[1].replace("_", " ").title() if len(parts) > 1 else "Healthy"
 
     # --------------------------------------------------
-    # DISPLAY RESULTS
+    # DISPLAY RESULT (SEPARATE BOXES)
     # --------------------------------------------------
     st.subheader("🧠 Prediction Result")
-    st.success(f"🌱 Crop: **{crop}**")
-    st.info(f"🦠 Disease: **{disease}**")
-    st.write(f"📊 Confidence: **{confidence:.2f}%**")
-    st.write(f"🧠 Model used: **{model_used.upper()}**")
 
-    st.progress(float(confidence) / 100.0)
+    st.success(f"🌱 Leaf Name: **{crop}**")
+    st.info(f"🦠 Leaf Disease: **{disease}**")
+
+    st.metric("📊 Confidence", f"{confidence:.2f}%")
 
     st.subheader("📈 Model Performance")
-    st.write(f"✅ Accuracy: **{metrics['accuracy'] * 100:.2f}%**")
-    st.write(f"🎯 Precision: **{metrics['precision'] * 100:.2f}%**")
+    st.metric("✅ Accuracy", f"{metrics['accuracy'] * 100:.2f}%")
+    st.metric("🎯 Precision", f"{metrics['precision'] * 100:.2f}%")
+
+    st.progress(confidence / 100.0)
+    st.caption(f"🧠 Model used: {model_used.upper()}")
