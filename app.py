@@ -7,20 +7,20 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 
 # ---------------- PAGE CONFIG ----------------
-st.set_page_config(
-    page_title="Leaf Disease Detection",
-    layout="centered"
-)
+st.set_page_config(page_title="Leaf Disease Detection", layout="centered")
 
 st.title("🌿 Leaf Disease Detection")
 st.write("Upload a leaf image to predict the **crop** and **disease**")
 
-# ---------------- GITHUB RELEASE URLS ----------------
+# ---------------- URLS ----------------
 MODEL_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v2.0.0/leaf_disease_multicrop_model.keras"
 MODEL_PATH = "leaf_disease_multicrop_model.keras"
 
 METRICS_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v2.0.0/model_metrics.3.json"
 METRICS_PATH = "model_metrics.json"
+
+CLASS_INDEX_URL = "https://raw.githubusercontent.com/SaiTeja-tech-byte/leaf-disease-detection/main/class_indices.json"
+CLASS_INDEX_PATH = "class_indices.json"
 
 # ---------------- LOAD MODEL ----------------
 @st.cache_resource
@@ -44,8 +44,25 @@ def load_metrics():
     with open(METRICS_PATH, "r") as f:
         return json.load(f)
 
+# ---------------- LOAD CLASS LABELS ----------------
+@st.cache_data
+def load_class_labels():
+    if not os.path.exists(CLASS_INDEX_PATH):
+        r = requests.get(CLASS_INDEX_URL)
+        r.raise_for_status()
+        with open(CLASS_INDEX_PATH, "wb") as f:
+            f.write(r.content)
+
+    with open(CLASS_INDEX_PATH, "r") as f:
+        class_indices = json.load(f)
+
+    # Convert index → label
+    idx_to_label = {v: k for k, v in class_indices.items()}
+    return idx_to_label
+
 model = load_trained_model()
 metrics = load_metrics()
+idx_to_label = load_class_labels()
 
 # ---------------- IMAGE UPLOAD ----------------
 uploaded_file = st.file_uploader(
@@ -53,30 +70,24 @@ uploaded_file = st.file_uploader(
     type=["jpg", "jpeg", "png"]
 )
 
-if uploaded_file is not None:
+if uploaded_file:
     st.image(uploaded_file, caption="Uploaded Image", width=300)
 
-    # Preprocess image
     img = image.load_img(uploaded_file, target_size=(224, 224))
     img_array = image.img_to_array(img) / 255.0
     img_array = np.expand_dims(img_array, axis=0)
 
-    # Prediction
     prediction = model.predict(img_array)
     idx = np.argmax(prediction)
     confidence = np.max(prediction) * 100
 
-    # Decode class label
-    class_label = model.class_names[idx]
-    crop, disease = class_label.split("__")
+    label = idx_to_label[idx]
+    crop, disease = label.split("__")
 
-    # ---------------- OUTPUT ----------------
     st.success("🧠 Prediction Result")
-
     st.write(f"🌱 **Crop:** {crop}")
     st.write(f"🦠 **Disease:** {disease.replace('_', ' ')}")
     st.write(f"📊 **Confidence:** {confidence:.2f}%")
-
     st.progress(confidence / 100)
 
     st.divider()
