@@ -90,10 +90,12 @@ if uploaded_file:
     st.write(f"🌱 **Crop:** {crop}")
     st.write(f"🦠 **Disease:** {disease.replace('_', ' ')}")
     st.write(f"📊 **Confidence:** {confidence:.2f}%")
-    st.progress(confidence / 100)
+    st.progress(float(confidence) / 100)
+
 
     st.divider()
 
     st.info("📈 Model Performance (Test Set)")
     st.write(f"✅ **Accuracy:** {metrics['accuracy'] * 100:.2f}%")
     st.write(f"🎯 **Precision:** {metrics['precision'] * 100:.2f}%")
+
