@@ -12,15 +12,34 @@ st.set_page_config(page_title="Leaf Disease Detection", layout="centered")
 st.title("🌿 Leaf Disease Detection")
 st.write("Upload a leaf image to predict the **crop** and **disease**")
 
-# ---------------- URLS ----------------
+# ---------------- GITHUB RELEASE URLS ----------------
 MODEL_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v2.0.0/leaf_disease_multicrop_model.keras"
 MODEL_PATH = "leaf_disease_multicrop_model.keras"
 
 METRICS_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v2.0.0/model_metrics.3.json"
 METRICS_PATH = "model_metrics.json"
 
-CLASS_INDEX_URL = "https://raw.githubusercontent.com/SaiTeja-tech-byte/leaf-disease-detection/main/class_indices.json"
-CLASS_INDEX_PATH = "class_indices.json"
+# ---------------- CLASS LABELS ----------------
+CLASS_NAMES = [
+    "Pepper__Bacterial_Spot",
+    "Pepper__Healthy",
+    "Potato__Early_Blight",
+    "Potato__Healthy",
+    "Potato__Late_Blight",
+    "Rice__Bacterial_Leaf_Blight",
+    "Rice__Brown_Spot",
+    "Rice__Leaf_Smut",
+    "Tomato__Bacterial_Spot",
+    "Tomato__Early_Blight",
+    "Tomato__Healthy",
+    "Tomato__Late_Blight",
+    "Tomato__Leaf_Mold",
+    "Tomato__Septoria_Leaf_Spot",
+    "Tomato__Spider_Mites_Two_Spotted_Spider_Mite",
+    "Tomato__Target_Spot",
+    "Tomato__Tomato_Mosaic_Virus",
+    "Tomato__Tomato_YellowLeaf_Curl_Virus"
+]
 
 # ---------------- LOAD MODEL ----------------
 @st.cache_resource
@@ -44,25 +63,8 @@ def load_metrics():
     with open(METRICS_PATH, "r") as f:
         return json.load(f)
 
-# ---------------- LOAD CLASS LABELS ----------------
-@st.cache_data
-def load_class_labels():
-    if not os.path.exists(CLASS_INDEX_PATH):
-        r = requests.get(CLASS_INDEX_URL)
-        r.raise_for_status()
-        with open(CLASS_INDEX_PATH, "wb") as f:
-            f.write(r.content)
-
-    with open(CLASS_INDEX_PATH, "r") as f:
-        class_indices = json.load(f)
-
-    # Convert index → label
-    idx_to_label = {v: k for k, v in class_indices.items()}
-    return idx_to_label
-
 model = load_trained_model()
 metrics = load_metrics()
-idx_to_label = load_class_labels()
 
 # ---------------- IMAGE UPLOAD ----------------
 uploaded_file = st.file_uploader(
@@ -81,7 +83,7 @@ if uploaded_file:
     idx = np.argmax(prediction)
     confidence = np.max(prediction) * 100
 
-    label = idx_to_label[idx]
+    label = CLASS_NAMES[idx]
     crop, disease = label.split("__")
 
     st.success("🧠 Prediction Result")
