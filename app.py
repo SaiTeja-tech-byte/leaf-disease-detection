@@ -16,14 +16,11 @@ st.write("Choose the correct tab based on the crop type, then upload a leaf imag
 IMG_SIZE = (224, 224)
 
 # --------------------------------------------------
-# GITHUB RELEASE URLS
+# MODEL & METRIC URLS
 # --------------------------------------------------
-
-# v2 model (Rice, Potato, Tomato, Pepper)
 MODEL_V2_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v2.0.0/leaf_disease_multicrop_model.keras"
 METRICS_V2_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v2.0.0/model_metrics.3.json"
 
-# v3 model (Fruits & others)
 MODEL_V3_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v3.0.0/leaf_disease_v3_checkpoint.keras"
 METRICS_V3_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v3.0.0/model_metrics_v3.json"
 
@@ -111,7 +108,7 @@ V3_CLASSES = sorted([
 ])
 
 # --------------------------------------------------
-# LOAD MODELS & METRICS
+# LOAD
 # --------------------------------------------------
 model_v2, model_v3 = load_models()
 metrics_v2, metrics_v3 = load_metrics()
@@ -119,27 +116,31 @@ metrics_v2, metrics_v3 = load_metrics()
 # --------------------------------------------------
 # TABS
 # --------------------------------------------------
-tab1, tab2 = st.tabs(
-    ["🌾 v2 Model (Rice / Potato / Tomato / Pepper)",
-     "🍎 v3 Model (Fruits & Other Crops)"]
-)
+tab1, tab2 = st.tabs(["🌾 v2 Model", "🍎 v3 Model"])
 
-# =========================
-# TAB 1 — v2 MODEL
-# =========================
+def parse_label(label):
+    label = label.replace("___", "__")
+    parts = label.split("__")
+    crop = parts[0].replace("_", " ").title()
+
+    if len(parts) > 1:
+        disease_raw = parts[1].replace("_", " ").title()
+        if "healthy" in disease_raw.lower():
+            disease = "Healthy"
+        else:
+            disease = disease_raw
+    else:
+        disease = "Unknown"
+
+    return crop, disease
+
+# ---------------- v2 ----------------
 with tab1:
-    st.subheader("🌾 v2 Model")
-    st.write("Supported crops: Rice, Potato, Tomato, Pepper")
-
-    file = st.file_uploader(
-        "Upload leaf image (v2)",
-        type=["jpg", "jpeg", "png"],
-        key="v2_upload"
-    )
+    st.subheader("🌾 v2 Model (Rice, Potato, Tomato, Pepper)")
+    file = st.file_uploader("Upload leaf image (v2)", type=["jpg", "jpeg", "png"])
 
     if file:
         st.image(file, width=300)
-
         img = image.load_img(file, target_size=IMG_SIZE)
         img = image.img_to_array(img) / 255.0
         img = np.expand_dims(img, axis=0)
@@ -148,38 +149,21 @@ with tab1:
         idx = int(np.argmax(preds))
         confidence = float(np.max(preds)) * 100
 
-        label = V2_CLASSES[idx]
-        parts = label.split("___")
-
-        crop = parts[0].replace("_", " ").title()
-        disease = (
-            parts[1].replace("_", " ").title()
-            if len(parts) > 1
-            else "Healthy / No disease detected"
-        )
+        crop, disease = parse_label(V2_CLASSES[idx])
 
         st.success(f"🌱 Leaf Name: **{crop}**")
         st.info(f"🦠 Leaf Disease: **{disease}**")
         st.metric("📊 Confidence", f"{confidence:.2f}%")
-        st.metric("✅ Accuracy", f"{metrics_v2['accuracy'] * 100:.2f}%")
-        st.metric("🎯 Precision", f"{metrics_v2['precision'] * 100:.2f}%")
+        st.metric("✅ Accuracy", f"{metrics_v2['accuracy']*100:.2f}%")
+        st.metric("🎯 Precision", f"{metrics_v2['precision']*100:.2f}%")
 
-# =========================
-# TAB 2 — v3 MODEL
-# =========================
+# ---------------- v3 ----------------
 with tab2:
-    st.subheader("🍎 v3 Model")
-    st.write("Supported crops: Fruits, Corn, Soybean, Squash")
-
-    file = st.file_uploader(
-        "Upload leaf image (v3)",
-        type=["jpg", "jpeg", "png"],
-        key="v3_upload"
-    )
+    st.subheader("🍎 v3 Model (Fruits & Other Crops)")
+    file = st.file_uploader("Upload leaf image (v3)", type=["jpg", "jpeg", "png"])
 
     if file:
         st.image(file, width=300)
-
         img = image.load_img(file, target_size=IMG_SIZE)
         img = image.img_to_array(img) / 255.0
         img = np.expand_dims(img, axis=0)
@@ -188,18 +172,10 @@ with tab2:
         idx = int(np.argmax(preds))
         confidence = float(np.max(preds)) * 100
 
-        label = V3_CLASSES[idx]
-        parts = label.split("___")
-
-        crop = parts[0].replace("_", " ").title()
-        disease = (
-            parts[1].replace("_", " ").title()
-            if len(parts) > 1
-            else "Healthy / No disease detected"
-        )
+        crop, disease = parse_label(V3_CLASSES[idx])
 
         st.success(f"🌱 Leaf Name: **{crop}**")
         st.info(f"🦠 Leaf Disease: **{disease}**")
         st.metric("📊 Confidence", f"{confidence:.2f}%")
-        st.metric("✅ Accuracy", f"{metrics_v3['accuracy'] * 100:.2f}%")
-        st.metric("🎯 Precision", f"{metrics_v3['precision'] * 100:.2f}%")
+        st.metric("✅ Accuracy", f"{metrics_v3['accuracy']*100:.2f}%")
+        st.metric("🎯 Precision", f"{metrics_v3['precision']*100:.2f}%")
