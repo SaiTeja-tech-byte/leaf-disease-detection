@@ -15,7 +15,7 @@ create_user_table()
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
-# ===================== LOGIN / SIGNUP UI =====================
+# ===================== LOGIN / SIGNUP =====================
 def login_page():
     st.title("🔐 User Authentication")
 
@@ -171,9 +171,12 @@ tab1, tab2 = st.tabs(["🌾 v2 Model", "🍎 v3 Model"])
 
 # ===================== V2 TAB =====================
 with tab1:
+    st.caption("✅ Supported crops: Rice, Potato, Tomato, Pepper")
+
     file = st.file_uploader("Upload leaf image (v2)", type=["jpg", "jpeg", "png"])
     if file:
         st.image(file, width=300)
+
         img = image.load_img(file, target_size=IMG_SIZE)
         img = image.img_to_array(img) / 255.0
         img = np.expand_dims(img, axis=0)
@@ -192,9 +195,15 @@ with tab1:
 
 # ===================== V3 TAB =====================
 with tab2:
+    st.caption(
+        "✅ Supported crops: Apple, Blueberry, Cherry, Corn, Grape, Orange, "
+        "Peach, Raspberry, Soybean, Squash, Strawberry"
+    )
+
     file = st.file_uploader("Upload leaf image (v3)", type=["jpg", "jpeg", "png"])
     if file:
         st.image(file, width=300)
+
         img = image.load_img(file, target_size=IMG_SIZE)
         img = image.img_to_array(img) / 255.0
         img = np.expand_dims(img, axis=0)
