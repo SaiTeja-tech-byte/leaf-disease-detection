@@ -6,35 +6,82 @@ import requests
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 
-# --------------------------------------------------
-# PAGE CONFIG
-# --------------------------------------------------
+# ===================== AUTH IMPORTS =====================
+from auth import create_user_table, signup_user, login_user
+
+# ===================== AUTH SETUP =====================
+create_user_table()
+
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+# ===================== LOGIN / SIGNUP UI =====================
+def login_page():
+    st.title("🔐 User Authentication")
+
+    tab1, tab2 = st.tabs(["Login", "Sign Up"])
+
+    with tab1:
+        st.subheader("Login")
+        username = st.text_input("Username", key="login_user")
+        password = st.text_input("Password", type="password", key="login_pass")
+
+        if st.button("Login"):
+            if login_user(username, password):
+                st.session_state.logged_in = True
+                st.session_state.username = username
+                st.success("✅ Login successful")
+                st.rerun()
+            else:
+                st.error("❌ Invalid username or password")
+
+    with tab2:
+        st.subheader("Sign Up")
+        new_user = st.text_input("New Username", key="signup_user")
+        new_pass = st.text_input("New Password", type="password", key="signup_pass")
+
+        if st.button("Create Account"):
+            if signup_user(new_user, new_pass):
+                st.success("✅ Account created. Please login.")
+            else:
+                st.error("❌ Username already exists")
+
+def logout():
+    st.session_state.logged_in = False
+    st.session_state.username = ""
+    st.rerun()
+
+# ===================== PROTECT APP =====================
+if not st.session_state.logged_in:
+    login_page()
+    st.stop()
+
+# ===================== MAIN APP =====================
 st.set_page_config(page_title="Leaf Disease Detection", layout="centered")
+
+col1, col2 = st.columns([8, 2])
+with col2:
+    if st.button("🚪 Logout"):
+        logout()
+
 st.title("🌿 Leaf Disease Detection")
 st.write("Choose the correct tab based on the crop type, then upload a leaf image.")
 
 IMG_SIZE = (224, 224)
 
-# --------------------------------------------------
-# MODEL & METRIC URLS
-# --------------------------------------------------
+# ===================== URLs =====================
 MODEL_V2_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v2.0.0/leaf_disease_multicrop_model.keras"
 METRICS_V2_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v2.0.0/model_metrics.3.json"
 
 MODEL_V3_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v3.0.0/leaf_disease_v3_checkpoint.keras"
 METRICS_V3_URL = "https://github.com/SaiTeja-tech-byte/leaf-disease-detection/releases/download/v3.0.0/model_metrics_v3.json"
 
-# --------------------------------------------------
-# LOCAL PATHS
-# --------------------------------------------------
 MODEL_V2_PATH = "model_v2.keras"
 MODEL_V3_PATH = "model_v3.keras"
 METRICS_V2_PATH = "metrics_v2.json"
 METRICS_V3_PATH = "metrics_v3.json"
 
-# --------------------------------------------------
-# HELPERS
-# --------------------------------------------------
+# ===================== HELPERS =====================
 def download_file(url, path):
     if not os.path.exists(path):
         r = requests.get(url)
@@ -58,9 +105,7 @@ def load_metrics():
         m3 = json.load(f)
     return m2, m3
 
-# --------------------------------------------------
-# CLASS LABELS
-# --------------------------------------------------
+# ===================== CLASSES =====================
 V2_CLASSES = [
     "Pepper__bell___Bacterial_spot",
     "Pepper__bell___healthy",
@@ -107,38 +152,26 @@ V3_CLASSES = sorted([
     "Strawberry___Leaf_scorch"
 ])
 
-# --------------------------------------------------
-# LOAD
-# --------------------------------------------------
 model_v2, model_v3 = load_models()
 metrics_v2, metrics_v3 = load_metrics()
-
-# --------------------------------------------------
-# TABS
-# --------------------------------------------------
-tab1, tab2 = st.tabs(["🌾 v2 Model", "🍎 v3 Model"])
 
 def parse_label(label):
     label = label.replace("___", "__")
     parts = label.split("__")
     crop = parts[0].replace("_", " ").title()
 
-    if len(parts) > 1:
-        disease_raw = parts[1].replace("_", " ").title()
-        if "healthy" in disease_raw.lower():
-            disease = "Healthy"
-        else:
-            disease = disease_raw
+    if len(parts) > 1 and "healthy" not in parts[1].lower():
+        disease = parts[1].replace("_", " ").title()
     else:
-        disease = "Unknown"
+        disease = "Healthy"
 
     return crop, disease
 
-# ---------------- v2 ----------------
-with tab1:
-    st.subheader("🌾 v2 Model (Rice, Potato, Tomato, Pepper)")
-    file = st.file_uploader("Upload leaf image (v2)", type=["jpg", "jpeg", "png"])
+tab1, tab2 = st.tabs(["🌾 v2 Model", "🍎 v3 Model"])
 
+# ===================== V2 TAB =====================
+with tab1:
+    file = st.file_uploader("Upload leaf image (v2)", type=["jpg", "jpeg", "png"])
     if file:
         st.image(file, width=300)
         img = image.load_img(file, target_size=IMG_SIZE)
@@ -157,11 +190,9 @@ with tab1:
         st.metric("✅ Accuracy", f"{metrics_v2['accuracy']*100:.2f}%")
         st.metric("🎯 Precision", f"{metrics_v2['precision']*100:.2f}%")
 
-# ---------------- v3 ----------------
+# ===================== V3 TAB =====================
 with tab2:
-    st.subheader("🍎 v3 Model (Fruits & Other Crops)")
     file = st.file_uploader("Upload leaf image (v3)", type=["jpg", "jpeg", "png"])
-
     if file:
         st.image(file, width=300)
         img = image.load_img(file, target_size=IMG_SIZE)
